@@ -1,0 +1,131 @@
+
+DROP TABLE IF EXISTS colors;
+DROP TABLE IF EXISTS themes;
+DROP TABLE IF EXISTS part_categories;
+DROP TABLE IF EXISTS parts;
+DROP TABLE IF EXISTS sets;
+DROP TABLE IF EXISTS inventories;
+DROP TABLE IF EXISTS inventory_sets;
+DROP TABLE IF EXISTS inventory_parts;
+
+/*
+The colors table holds all possible values for colors of Lego parts
+*/
+CREATE TABLE colors
+(
+	id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- id is an integer representing unqiue rows in the table
+	color_name varchar(255) NOT NULL, -- color_name is the name of the color
+	color_hexadecimal_value varchar(255) NOT NULL, 	-- The hexadecimal value to represent the color
+	is_translucent boolean NOT NULL -- Whether or not the color is transparant or translucent
+);
+
+/*
+The themes tables contains information on various Lego themes.
+A theme can be a subset of another theme.  The parent_id column represents if the current theme is a child of a larger (parent) theme
+*/
+CREATE TABLE themes
+(
+	id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- id is an integer representing unqiue rows in the table
+	theme_name varchar(255) NOT NULL, -- The name of the theme
+	parent_id integer REFERENCES themes (id) -- The theme id of the parent theme (represents if this theme is a sub-theme of another)
+);
+
+/*
+The part_categories table represents categories that parts are categorized into
+*/
+CREATE TABLE part_categories
+(
+	id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- id is an integer representing unqiue rows in the table
+	category_name varchar(255) NOT NULL -- The name of the part category
+);
+
+/*
+The parts table contains infomration on all the Lego parts
+*/
+CREATE TABLE parts
+(
+	id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- id is an integer representing unqiue rows in the table
+	part_number varchar(255) NOT NULL UNIQUE, -- The number of the part
+	part_name varchar(255) NOT NULL, -- The name of the part
+	part_category_id integer NOT NULL REFERENCES part_categories (id) -- The caregory id that the part belongs to
+);
+
+/*
+The sets table contains informaton related to Lego sets
+*/
+CREATE TABLE sets
+(
+	id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- id is an integer representing unqiue rows in the table
+	set_number varchar(255) NOT NULL UNIQUE, -- The unique number of the set
+	set_name varchar(255) NOT NULL, -- The name of the set
+	year integer NOT NULL, -- The year that the set was released
+	theme_id integer NOT NULL REFERENCES themes(id), -- Theme id of the theme that the set is associated with
+	num_parts integer NOT NULL -- The number of parts contained in the set
+);
+
+/*
+The inventories table contains informaton related to inventories
+An inventory is a smaller grouping of parts that are associated with a set (like the bag of parts within the set)
+An inventory can be part of multiple sets
+*/
+CREATE TABLE inventories
+(
+	id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- id is an integer representing unqiue rows in the table
+	version integer NOT NULL, -- The version number of the inventory. This is versioned in the event that there are changes to the parts in the inventory)
+	set_id integer NOT NULL REFERENCES sets(id) -- The id of the set that this inventory is associated with
+);
+
+/*
+The inventory_sets table contains informaton for how many inventories are included in a set
+*/
+CREATE TABLE inventory_sets
+(
+	id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY, -- id is an integer representing unqiue rows in the table
+	inventory_id integer NOT NULL REFERENCES inventories(id), -- The id of the inventory item associated with this set
+	set_id integer NOT NULL REFERENCES sets(id), -- The id of the set
+	quantity integer NOT NULL -- The number of inventory items in the set
+);
+
+
+/*
+The inventory_parts table contains informaiton on what parts are associated with inventories.
+*/
+CREATE TABLE inventory_parts
+(
+	id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	inventory_id integer NOT NULL REFERENCES inventories(id),
+	part_id integer REFERENCES parts(id),
+	color_id integer NOT NULL REFERENCES colors(id),
+	quantity integer NOT NULL,
+	is_spare boolean NOT NULL
+);
+
+
+----------------------------------------------------------------------------------------------------------------------------
+
+-- Populate tables
+
+COPY colors(id, color_name, color_hexadecimal_value, is_translucent)
+FROM 'D:\Stuff\Classes\UWPClasses\CS3630_Spring2020\Assignments\Assignment_04\Data\colors.csv' DELIMITER ',' CSV HEADER;
+
+COPY themes(id, theme_name, parent_id)
+FROM 'D:\Stuff\Classes\UWPClasses\CS3630_Spring2020\Assignments\Assignment_04\Data\themes.csv' DELIMITER ',' CSV HEADER;
+
+COPY part_categories(id, category_name)
+FROM 'D:\Stuff\Classes\UWPClasses\CS3630_Spring2020\Assignments\Assignment_04\Data\part_categories.csv' DELIMITER ',' CSV HEADER;
+
+COPY parts(id, part_number, part_name, part_category_id)
+FROM 'D:\Stuff\Classes\UWPClasses\CS3630_Spring2020\Assignments\Assignment_04\Data\parts.csv' DELIMITER ',' CSV HEADER;
+
+COPY sets(id, set_number, set_name, year, theme_id, num_parts)
+FROM 'D:\Stuff\Classes\UWPClasses\CS3630_Spring2020\Assignments\Assignment_04\Data\sets.csv' DELIMITER ',' CSV HEADER;
+
+COPY inventories(id, version, set_id)
+FROM 'D:\Stuff\Classes\UWPClasses\CS3630_Spring2020\Assignments\Assignment_04\Data\inventories.csv' DELIMITER ',' CSV HEADER;
+
+COPY inventory_sets(id, inventory_id, set_id, quantity)
+FROM 'D:\Stuff\Classes\UWPClasses\CS3630_Spring2020\Assignments\Assignment_04\Data\inventory_sets.csv' DELIMITER ',' CSV HEADER;
+
+COPY inventory_parts(id, inventory_id, part_id, color_id, quantity, is_spare)
+FROM 'D:\Stuff\Classes\UWPClasses\CS3630_Spring2020\Assignments\Assignment_04\Data\inventory_parts.csv' DELIMITER ',' CSV HEADER;
+
